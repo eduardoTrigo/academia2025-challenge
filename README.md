@@ -61,7 +61,7 @@ Al iniciar por primera vez, se crean automáticamente estos productos:
 ## 📁 Estructura del Proyecto
 
 ```
-challege/
+academia2025-challenge/
 ├── src/
 │   ├── config/
 │   │   ├── swagger.ts       # Configuración completa de Swagger/OpenAPI 3.0
@@ -90,10 +90,7 @@ challege/
 ├── package.json            # Configuración del proyecto y dependencias
 ├── package-lock.json       # Versiones exactas de dependencias
 ├── README.md               # Documentación principal del proyecto
-├── SWAGGER_README.md       # Guía específica de Swagger/OpenAPI
 ├── LOGGING_README.md       # Documentación completa del sistema de logging
-├── test_auth_products.md   # Ejemplos de pruebas con autenticación
-├── test-logging.sh         # Script de pruebas del sistema de logging
 └── tsconfig.json           # Configuración del compilador TypeScript
 ```
 
@@ -213,27 +210,6 @@ TOKEN_EXPIRY_HOURS=24
 - **Expiración**: Tokens válidos por 24 horas
 - **Verificación de Usuario**: Validación de existencia del usuario
 
-## 📦 Dependencias
-
-### Dependencias de Producción
-- `express` (^4.18.2) - Framework web para Node.js
-- `pg` (^8.16.3) - Driver de PostgreSQL para Node.js
-- `dotenv` (^17.2.1) - Manejo de variables de entorno
-- `swagger-jsdoc` (^6.2.8) - Generador de especificación OpenAPI desde anotaciones
-- `swagger-ui-express` (^5.0.1) - Interfaz web para documentación Swagger
-- `sqlite3` (^5.1.7) - Driver SQLite (para desarrollo/pruebas)
-- `winston` (^3.14.2) - Sistema de logging avanzado con múltiples transportes
-
-### Dependencias de Desarrollo
-- `typescript` (^5.3.3) - Compilador de TypeScript
-- `@types/express` (^4.17.21) - Tipos de TypeScript para Express
-- `@types/node` (^20.10.5) - Tipos de TypeScript para Node.js
-- `@types/pg` (^8.15.5) - Tipos de TypeScript para PostgreSQL
-- `@types/sqlite3` (^3.1.11) - Tipos de TypeScript para SQLite3
-- `@types/swagger-jsdoc` (^6.0.4) - Tipos para swagger-jsdoc
-- `@types/swagger-ui-express` (^4.1.8) - Tipos para swagger-ui-express
-- `ts-node-dev` (^2.0.0) - Herramienta de desarrollo para TypeScript con recarga automática
-
 ## 📊 Sistema de Logging
 
 El proyecto incluye un sistema de logging completo que registra **todos los eventos** de la API:
@@ -254,8 +230,6 @@ El proyecto incluye un sistema de logging completo que registra **todos los even
 - **Consola** (desarrollo): Logs con colores en tiempo real
 - **Archivos** (producción): Logs estructurados en JSON
 - **Formato**: Timestamp, nivel, mensaje, metadata contextual
-
-📚 **Documentación completa**: Ver [LOGGING_README.md](./LOGGING_README.md)
 
 ## 📚 Documentación Adicional
 
