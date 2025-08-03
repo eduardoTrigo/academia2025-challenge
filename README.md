@@ -103,7 +103,7 @@ academia2025-challenge/
 
 ### Configuración Rápida
 
-**1. Comando Básico (levanta la base de datos con datos precargados):**
+**Iniciar PostgreSQL (levanta la base de datos con datos precargados):**
 ```bash
 docker run --name academia2025-challenge -d ghcr.io/jonathanvgms/academia2025-challenge
 ```
