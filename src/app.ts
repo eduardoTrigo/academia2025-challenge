@@ -34,6 +34,259 @@ app.use('/api/products', productRoutes);
 
 /**
  * @swagger
+ * /health:
+ *   get:
+ *     tags: [Health Check]
+ *     summary: Health Check del sistema
+ *     description: Verifica el estado de salud de la aplicación y sus dependencias
+ *     responses:
+ *       200:
+ *         description: Sistema saludable
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "healthy"
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                   example: "2025-08-03T10:30:00.000Z"
+ *                 uptime:
+ *                   type: number
+ *                   example: 3600.5
+ *                 version:
+ *                   type: string
+ *                   example: "1.0.0"
+ *                 environment:
+ *                   type: string
+ *                   example: "production"
+ *                 services:
+ *                   type: object
+ *                   properties:
+ *                     database:
+ *                       type: object
+ *                       properties:
+ *                         status:
+ *                           type: string
+ *                           example: "connected"
+ *                         responseTime:
+ *                           type: number
+ *                           example: 15.5
+ *                     redis:
+ *                       type: object
+ *                       properties:
+ *                         status:
+ *                           type: string
+ *                           example: "connected"
+ *                         responseTime:
+ *                           type: number
+ *                           example: 2.1
+ *                 system:
+ *                   type: object
+ *                   properties:
+ *                     memory:
+ *                       type: object
+ *                       properties:
+ *                         used:
+ *                           type: number
+ *                           example: 134217728
+ *                         total:
+ *                           type: number
+ *                           example: 2147483648
+ *                         percentage:
+ *                           type: number
+ *                           example: 6.25
+ *       503:
+ *         description: Sistema no saludable
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "unhealthy"
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ */
+// GET /health - Health Check endpoint
+app.get('/health', async (req: Request, res: Response) => {
+  const startTime = Date.now();
+  const timestamp = new Date().toISOString();
+  const uptime = process.uptime();
+  
+  let status = 'healthy';
+  const errors: string[] = [];
+  const services: any = {};
+  
+  try {
+    // Health check de base de datos (simulado - reemplazar con conexión real)
+    const dbStartTime = Date.now();
+    try {
+      // TODO: Reemplazar con verificación real de base de datos
+      // Ejemplo: await dbConnection.query('SELECT 1');
+      await new Promise(resolve => setTimeout(resolve, Math.random() * 20)); // Simula latencia
+      services.database = {
+        status: 'connected',
+        responseTime: Date.now() - dbStartTime
+      };
+    } catch (error) {
+      services.database = {
+        status: 'disconnected',
+        error: 'Database connection failed'
+      };
+      errors.push('Database is not accessible');
+      status = 'unhealthy';
+    }
+    
+    // Health check de Redis (simulado - reemplazar con conexión real)
+    const redisStartTime = Date.now();
+    try {
+      // TODO: Reemplazar con verificación real de Redis
+      // Ejemplo: await redisClient.ping();
+      await new Promise(resolve => setTimeout(resolve, Math.random() * 5)); // Simula latencia
+      services.redis = {
+        status: 'connected',
+        responseTime: Date.now() - redisStartTime
+      };
+    } catch (error) {
+      services.redis = {
+        status: 'disconnected',
+        error: 'Redis connection failed'
+      };
+      // Redis no es crítico, no marcamos como unhealthy
+    }
+    
+    // Información del sistema
+    const memoryUsage = process.memoryUsage();
+    const system = {
+      memory: {
+        used: memoryUsage.heapUsed,
+        total: memoryUsage.heapTotal,
+        percentage: Math.round((memoryUsage.heapUsed / memoryUsage.heapTotal) * 100 * 100) / 100
+      },
+      cpu: {
+        uptime: uptime,
+        load: process.cpuUsage()
+      }
+    };
+    
+    const responseTime = Date.now() - startTime;
+    
+    const healthResponse = {
+      status,
+      timestamp,
+      uptime,
+      version: '1.0.0',
+      environment: process.env.NODE_ENV || 'development',
+      services,
+      system,
+      responseTime,
+      ...(errors.length > 0 && { errors })
+    };
+    
+    // Log del health check
+    logger.info('Health check ejecutado', {
+      status,
+      responseTime,
+      services: Object.keys(services).map(key => ({
+        name: key,
+        status: services[key].status
+      }))
+    });
+    
+    const statusCode = status === 'healthy' ? 200 : 503;
+    res.status(statusCode).json(healthResponse);
+    
+  } catch (error) {
+    logger.error('Error en health check', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    
+    res.status(503).json({
+      status: 'unhealthy',
+      timestamp,
+      error: 'Health check failed',
+      responseTime: Date.now() - startTime
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /health/ready:
+ *   get:
+ *     tags: [Health Check]
+ *     summary: Readiness check
+ *     description: Verifica si la aplicación está lista para recibir tráfico (endpoint simple para load balancers)
+ *     responses:
+ *       200:
+ *         description: Aplicación lista
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "ready"
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *       503:
+ *         description: Aplicación no lista
+ */
+// GET /health/ready - Readiness probe (para Kubernetes/Docker)
+app.get('/health/ready', (req: Request, res: Response) => {
+  // Check básico - la aplicación está corriendo
+  res.status(200).json({
+    status: 'ready',
+    timestamp: new Date().toISOString()
+  });
+});
+
+/**
+ * @swagger
+ * /health/live:
+ *   get:
+ *     tags: [Health Check]
+ *     summary: Liveness check
+ *     description: Verifica si la aplicación está viva (endpoint para restart automático)
+ *     responses:
+ *       200:
+ *         description: Aplicación viva
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "alive"
+ *                 uptime:
+ *                   type: number
+ *                   example: 3600.5
+ */
+// GET /health/live - Liveness probe (para Kubernetes/Docker)
+app.get('/health/live', (req: Request, res: Response) => {
+  res.status(200).json({
+    status: 'alive',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
+});
+
+/**
+ * @swagger
  * /:
  *   get:
  *     tags: [Información General]
