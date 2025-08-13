@@ -1,0 +1,86 @@
+version: "3.9"
+
+configs: {}
+secrets:
+  db_password:
+    external: true  # lo creamos antes con `docker secret create`
+
+networks:
+  web:
+    driver: overlay
+  backend:
+    driver: overlay
+
+volumes:
+  postgres_data_prod:
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: challenge_api
+      POSTGRES_USER: postgres
+      # en swarm, puedes pasar password por secreto montado usando POSTGRES_PASSWORD_FILE
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    networks:
+      - backend
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 5s
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "challenge_api"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    image: ghcr.io/tu_usuario/academia2025-challenge-api:latest # o dockerhub
+    environment:
+      NODE_ENV: production
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: challenge_api
+      DB_USER: postgres
+      DB_PASSWORD_FILE: /run/secrets/db_password
+      DB_RETRIES: "60"
+      PORT: "3000"
+    secrets:
+      - db_password
+    networks:
+      - web
+      - backend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+        failure_action: rollback
+      rollback_config:
+        parallelism: 1
+        delay: 5s
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M

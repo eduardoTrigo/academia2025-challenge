@@ -13,6 +13,7 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=postgres
       - NODE_ENV=development
+      - DB_RETRIES=30
     volumes:
       - .:/app
       - /app/node_modules
@@ -27,9 +28,15 @@ services:
       POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "challenge_api"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
     volumes:
       - postgres_data_dev:/var/lib/postgresql/data
 
 volumes:
   postgres_data_dev:
+
 
