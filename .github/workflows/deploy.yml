@@ -20,7 +20,12 @@ jobs:
 
       - name: Retag latest build to prod
         run: |
-          REPO=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          # Obtener el nombre del repositorio en minúsculas y sin caracteres especiales
+          REPO=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9\/-]//g')
+          
+          # Verificar el nombre del repositorio generado para depuración
+          echo "Generated repo name: $REPO"
+
           docker pull ghcr.io/$REPO:sha-${{ github.sha }}
           docker tag ghcr.io/$REPO:sha-${{ github.sha }} ghcr.io/$REPO:prod
           docker push ghcr.io/$REPO:prod
