@@ -20,9 +20,9 @@ jobs:
 
       - name: Retag latest build to prod
         run: |
-          docker pull ghcr.io/${{ github.repository }}:dev
-          docker tag ghcr.io/${{ github.repository }}:dev ghcr.io/${{ github.repository }}:prod
-          docker push ghcr.io/${{ github.repository }}:prod
+          docker pull ghcr.io/eduardotrigo/academia2025-challenge:dev
+          docker tag ghcr.io/eduardotrigo/academia2025-challenge:dev ghcr.io/eduardotrigo/academia2025-challenge:prod
+          docker push ghcr.io/eduardotrigo/academia2025-challenge:prod
 
       - name: Deploy to Swarm via SSH
         uses: appleboy/ssh-action@v1.0.3
