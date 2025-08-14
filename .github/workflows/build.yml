@@ -35,9 +35,9 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          target: production
+          target: development
           platforms: linux/amd64
           push: true
-          tags: ghcr.io/${{ env.DOCKER_REPO_NAME }}:prod
+          tags: ghcr.io/${{ env.DOCKER_REPO_NAME }}:dev
           cache-from: type=gha
           cache-to: type=gha,mode=max
