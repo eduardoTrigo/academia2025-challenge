@@ -9,9 +9,9 @@ permissions:
   contents: read
   packages: write
 
-# Cambiar la forma en que se define el nombre de la imagen
 env:
-  DOCKER_REPO_NAME: eduardotrigo/academia2025-challenge
+  # Normalizar el nombre del repositorio a minúsculas y sin caracteres especiales
+  REPO_NAME: ${{ github.repository }}
 
 jobs:
   docker:
@@ -31,12 +31,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Normalizar el nombre del repositorio
+        id: normalize_repo_name
+        run: echo "DOCKER_REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
       - name: Extract metadata (tags, labels)
         id: meta
         uses: docker/metadata-action@v5
         with:
-          # Usar la variable DOCKER_REPO_NAME para el nombre de la imagen
-          images: ghcr.io/${{ env.DOCKER_REPO_NAME }}
+          images: ghcr.io/${{ steps.normalize_repo_name.outputs.DOCKER_REPO_NAME }}
           tags: |
             type=raw,value=dev,enable=${{ github.ref == 'refs/heads/main' }}
             type=raw,value=prod,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
