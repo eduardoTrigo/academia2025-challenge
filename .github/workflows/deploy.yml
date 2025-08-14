@@ -34,5 +34,3 @@ jobs:
           script: |
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             docker stack deploy -c /home/deploy/docker-stack.yml app_stack --with-registry-auth
-ar el stack usando la imagen recién creada
-            docker stack deploy -c /home/deploy/docker-stack.yml app_stack --with-registry-auth
