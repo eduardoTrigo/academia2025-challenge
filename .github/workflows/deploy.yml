@@ -8,6 +8,22 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Retag latest build to prod
+        run: |
+          docker pull ghcr.io/${{ github.repository }}:dev
+          docker tag ghcr.io/${{ github.repository }}:dev ghcr.io/${{ github.repository }}:prod
+          docker push ghcr.io/${{ github.repository }}:prod
+
       - name: Deploy to Swarm via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -16,7 +32,6 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            DOCKER_REPO_NAME="eduardotrigo/academia2025-challenge"
-            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ secrets.GHCR_USER }} --password-stdin
-            docker pull ghcr.io/$DOCKER_REPO_NAME:prod
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             docker stack deploy -c /home/deploy/docker-stack.yml app_stack --with-registry-auth
+
