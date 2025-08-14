@@ -1,18 +1,15 @@
 version: "3.9"
 
-configs: {}
 secrets:
   db_password:
-    external: true  # lo creamos antes con `docker secret create`
+    external: true   # la crea el workflow de deploy en la VM
 
 networks:
-  web:
-    driver: overlay
-  backend:
+  challenge_net:
     driver: overlay
 
 volumes:
-  postgres_data_prod:
+  postgres_data:
 
 services:
   db:
@@ -20,67 +17,63 @@ services:
     environment:
       POSTGRES_DB: challenge_api
       POSTGRES_USER: postgres
-      # en swarm, puedes pasar password por secreto montado usando POSTGRES_PASSWORD_FILE
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
     secrets:
       - db_password
     volumes:
-      - postgres_data_prod:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     networks:
-      - backend
+      - challenge_net
     deploy:
       placement:
-        constraints: [node.role == manager]
-      resources:
-        limits:
-          cpus: "0.50"
-          memory: 512M
+        constraints:
+          - node.role == manager
       restart_policy:
         condition: on-failure
-      update_config:
-        parallelism: 1
         delay: 5s
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "challenge_api"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
+        max_attempts: 3
+        window: 120s
 
   api:
-    image: ghcr.io/tu_usuario/academia2025-challenge-api:latest # o dockerhub
-    environment:
-      NODE_ENV: production
-      DB_HOST: db
-      DB_PORT: "5432"
-      DB_NAME: challenge_api
-      DB_USER: postgres
-      DB_PASSWORD_FILE: /run/secrets/db_password
-      DB_RETRIES: "60"
-      PORT: "3000"
-    secrets:
-      - db_password
-    networks:
-      - web
-      - backend
+    image: ghcr.io/eduardoTrigo/academia2025-challenge:prod
     ports:
       - "3000:3000"
+    environment:
+      NODE_ENV: "production"
+      PORT: "3000"
+      DB_HOST: "db"
+      DB_PORT: "5432"
+      DB_NAME: "challenge_api" 
+      DB_USER: "postgres"
+      TOKEN_EXPIRY_HOURS: "24"
+    secrets:
+      - db_password
+    command: >
+      sh -c "export DB_PASSWORD=$(cat /run/secrets/db_password) && node dist/app.js"
+    networks:
+      - challenge_net
     depends_on:
       - db
     deploy:
       replicas: 2
       update_config:
         parallelism: 1
-        delay: 10s
+        delay: 5s
         order: start-first
         failure_action: rollback
       rollback_config:
         parallelism: 1
         delay: 5s
+        order: stop-first
       restart_policy:
         condition: on-failure
         delay: 5s
         max_attempts: 3
+        window: 2m
       resources:
         limits:
           cpus: "0.50"
-          memory: 256M
+          memory: 512M
+        reservations:
+          cpus: "0.10"
+          memory: 128M
