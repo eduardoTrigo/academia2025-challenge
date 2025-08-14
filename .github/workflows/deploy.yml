@@ -20,9 +20,11 @@ jobs:
 
       - name: Retag latest build to prod
         run: |
-          docker pull ghcr.io/${{ github.repository }}:sha-${{ github.sha }}
-          docker tag ghcr.io/${{ github.repository }}:sha-${{ github.sha }} ghcr.io/${{ github.repository }}:prod
-          docker push ghcr.io/${{ github.repository }}:prod
+          REPO=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          docker pull ghcr.io/$REPO:sha-${{ github.sha }}
+          docker tag ghcr.io/$REPO:sha-${{ github.sha }} ghcr.io/$REPO:prod
+          docker push ghcr.io/$REPO:prod
+
 
       - name: Deploy to Swarm via SSH
         uses: appleboy/ssh-action@v1.0.3
