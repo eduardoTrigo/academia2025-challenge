@@ -20,24 +20,9 @@ jobs:
 
       - name: Retag latest build to prod
         run: |
-          # Definir el nombre del repositorio de la imagen de Docker
-          DOCKER_REPO_NAME="eduardotrigo/academia2025-challenge"
-          
-          # Extraer el SHA para la etiqueta
-          SHA=${{ github.sha }}
-
-          # Muestra los valores para depuración
-          echo "Pulling image: ghcr.io/$DOCKER_REPO_NAME:sha-$SHA"
-
-          # Pull de la imagen original
-          docker pull ghcr.io/$DOCKER_REPO_NAME:sha-$SHA
-
-          # Etiquetar la imagen como "prod"
-          docker tag ghcr.io/$DOCKER_REPO_NAME:sha-$SHA ghcr.io/$DOCKER_REPO_NAME:prod
-
-          # Subir la imagen con la etiqueta "prod"
-          docker push ghcr.io/$DOCKER_REPO_NAME:prod
-
+          docker pull ghcr.io/${{ github.repository }}:sha-${{ github.sha }}
+          docker tag ghcr.io/${{ github.repository }}:sha-${{ github.sha }} ghcr.io/${{ github.repository }}:prod
+          docker push ghcr.io/${{ github.repository }}:prod
 
       - name: Deploy to Swarm via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -47,11 +32,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            # Definir el nombre del repositorio de la imagen de Docker
-            DOCKER_REPO_NAME="eduardotrigo/academia2025-challenge"
-            
-            # Login en el servidor Swarm
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
-            # Desplegar el stack usando la imagen recién creada
+            docker stack deploy -c /home/deploy/docker-stack.yml app_stack --with-registry-auth
+ar el stack usando la imagen recién creada
             docker stack deploy -c /home/deploy/docker-stack.yml app_stack --with-registry-auth
