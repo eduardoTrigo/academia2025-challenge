@@ -21,11 +21,13 @@ jobs:
       - name: Retag latest build to prod
         run: |
           # Definir el nombre del repositorio de la imagen de Docker
-          # Este es el nombre correcto que proporcionaste, en minúsculas y sin caracteres especiales no válidos.
           DOCKER_REPO_NAME="eduardotrigo/academia2025-challenge"
           
           # Extraer el SHA para la etiqueta
           SHA=${{ github.sha }}
+
+          # Muestra los valores para depuración
+          echo "Pulling image: ghcr.io/$DOCKER_REPO_NAME:sha-$SHA"
 
           # Pull de la imagen original
           docker pull ghcr.io/$DOCKER_REPO_NAME:sha-$SHA
