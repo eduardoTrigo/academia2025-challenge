@@ -26,3 +26,4 @@ jobs:
             docker tag ghcr.io/$DOCKER_REPO_NAME:dev ghcr.io/$DOCKER_REPO_NAME:prod
             echo "🚀 Deploy con Swarm"
             docker stack deploy -c /home/deploy/docker-stack.yml app_stack --with-registry-auth
+
