@@ -3,6 +3,7 @@ name: build-and-push
 on:
   push:
     branches: [ "main" ]
+    tags: [ "v*" ]
 
 permissions:
   contents: read
@@ -12,7 +13,7 @@ env:
   DOCKER_REPO_NAME: eduardotrigo/academia2025-challenge
 
 jobs:
-  docker:
+  build:
     runs-on: ubuntu-24.04
 
     steps:
@@ -29,15 +30,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels)
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ env.DOCKER_REPO_NAME }}
-          tags: |
-            type=raw,value=dev
-
-      - name: Build and push
+      - name: Build and push image (prod)
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -45,7 +38,6 @@ jobs:
           target: production
           platforms: linux/amd64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ghcr.io/${{ env.DOCKER_REPO_NAME }}:prod
           cache-from: type=gha
           cache-to: type=gha,mode=max
