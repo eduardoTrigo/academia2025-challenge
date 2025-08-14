@@ -18,24 +18,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_TOKEN }}
 
-      - name: Normalizar el nombre del repositorio
-        id: normalize_repo_name
-        run: echo "DOCKER_REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-
       - name: Retag latest build to prod
         run: |
-          # Usar el nombre de repositorio correcto y fijo
-          DOCKER_REPO_NAME="eduardotrigo/academia2025-challenge"
+          REPO_NAME="eduardotrigo/academia2025-challenge"
           SHA=${{ github.sha }}
 
-          echo "Buscando imagen: ghcr.io/$DOCKER_REPO_NAME:sha-$SHA"
-          docker pull ghcr.io/$DOCKER_REPO_NAME:sha-$SHA
-
-          echo "Etiquetando como 'prod': ghcr.io/$DOCKER_REPO_NAME:prod"
-          docker tag ghcr.io/$DOCKER_REPO_NAME:sha-$SHA ghcr.io/$DOCKER_REPO_NAME:prod
-
-          echo "Subiendo imagen 'prod' a GHCR"
-          docker push ghcr.io/$DOCKER_REPO_NAME:prod
+          docker pull ghcr.io/$REPO_NAME:sha-$SHA
+          docker tag ghcr.io/$REPO_NAME:sha-$SHA ghcr.io/$REPO_NAME:prod
+          docker push ghcr.io/$REPO_NAME:prod
 
       - name: Deploy to Swarm via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -45,8 +35,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            DOCKER_REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-            
+            REPO_NAME="eduardotrigo/academia2025-challenge"
+
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
             docker stack deploy -c /home/deploy/docker-stack.yml app_stack --with-registry-auth
