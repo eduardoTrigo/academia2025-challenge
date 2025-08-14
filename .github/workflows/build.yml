@@ -9,6 +9,7 @@ permissions:
   contents: read
   packages: write
 
+# Cambiar la forma en que se define el nombre de la imagen
 env:
   DOCKER_REPO_NAME: eduardotrigo/academia2025-challenge
 
@@ -34,6 +35,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
+          # Usar la variable DOCKER_REPO_NAME para el nombre de la imagen
           images: ghcr.io/${{ env.DOCKER_REPO_NAME }}
           tags: |
             type=raw,value=dev,enable=${{ github.ref == 'refs/heads/main' }}
