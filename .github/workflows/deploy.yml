@@ -20,10 +20,21 @@ jobs:
 
       - name: Retag latest build to prod
         run: |
-          docker pull ghcr.io/${{ github.repository }}:sha-${{ github.sha }}
-          docker tag ghcr.io/${{ github.repository }}:sha-${{ github.sha }} ghcr.io/${{ github.repository }}:prod
-          docker push ghcr.io/${{ github.repository }}:prod
+          # Obtener el nombre del repositorio de GitHub en minúsculas y eliminar caracteres especiales.
+          # Esto garantiza un nombre de imagen válido para Docker.
+          REPO_LOWERCASE=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9\/-]//g')
 
+          # Extraer el SHA para la etiqueta
+          SHA=${{ github.sha }}
+
+          # Pull de la imagen original
+          docker pull ghcr.io/$REPO_LOWERCASE:sha-$SHA
+
+          # Etiquetar la imagen como "prod"
+          docker tag ghcr.io/$REPO_LOWERCASE:sha-$SHA ghcr.io/$REPO_LOWERCASE:prod
+
+          # Subir la imagen con la etiqueta "prod"
+          docker push ghcr.io/$REPO_LOWERCASE:prod
 
       - name: Deploy to Swarm via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -33,5 +44,11 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
+            # Obtener el nombre del repositorio en minúsculas y sin caracteres especiales
+            REPO_LOWERCASE=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9\/-]//g')
+
+            # Login en el servidor Swarm
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            # Desplegar el stack usando la imagen recién creada
             docker stack deploy -c /home/deploy/docker-stack.yml app_stack --with-registry-auth
