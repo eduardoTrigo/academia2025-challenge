@@ -1,0 +1,48 @@
+name: swarm-deploy
+
+on:
+  workflow_dispatch:
+  push:
+    tags: [ "v*" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Copy docker-stack.yml to VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "docker-stack.yml"
+          target: "/home/${{ secrets.SSH_USER }}/docker-stack.yml"
+
+      - name: Remote deploy on Swarm manager
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            set -e
+
+            # 1) Login a GHCR en la VM (usa tu PAT con read:packages)
+            echo "${{ secrets.REGISTRY_TOKEN }}" | docker login ghcr.io -u "${{ secrets.REGISTRY_USER }}" --password-stdin
+
+            # 2) Crear/actualizar secret db_password (idempotente)
+            docker secret rm db_password || true
+            echo -n "${{ secrets.DB_PASSWORD_PROD }}" | docker secret create db_password -
+
+            # 3) Deploy/Update de la stack
+            docker stack deploy -c /home/${{ secrets.SSH_USER }}/docker-stack.yml challenge_stack
+
+            # 4) Mostrar estado
+            docker stack services challenge_stack
+            docker stack ps challenge_stack
