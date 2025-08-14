@@ -8,30 +8,6 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
-
-      - name: Retag latest build to prod
-        run: |
-          REPO_NAME="eduardotrigo/academia2025-challenge"
-          SHA=${{ github.sha }}
-          
-          echo "Buscando imagen: ghcr.io/$REPO_NAME:sha-$SHA"
-          docker pull ghcr.io/$REPO_NAME:sha-$SHA
-          
-          echo "Etiquetando como 'prod': ghcr.io/$REPO_NAME:prod"
-          docker tag ghcr.io/$REPO_NAME:sha-$SHA ghcr.io/$REPO_NAME:prod
-          
-          echo "Subiendo imagen 'prod' a GHCR"
-          docker push ghcr.io/$REPO_NAME:prod
-
       - name: Deploy to Swarm via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -40,7 +16,16 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            REPO_NAME="eduardotrigo/academia2025-challenge"
-            
+            DOCKER_REPO_NAME="eduardotrigo/academia2025-challenge"
+
+            echo "🔐 Login en GHCR"
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            docker stack deploy -c /home/deploy/docker-stack.yml app_stack --with-registry-authh
+
+            echo "⬇️ Descargando imagen dev"
+            docker pull ghcr.io/$DOCKER_REPO_NAME:dev
+
+            echo "🏷 Retag a prod"
+            docker tag ghcr.io/$DOCKER_REPO_NAME:dev ghcr.io/$DOCKER_REPO_NAME:prod
+
+            echo "🚀 Deploy con Swarm"
+            docker stack deploy -c /home/deploy/docker-stack.yml app_stack --with-registry-auth

@@ -3,14 +3,13 @@ name: build-and-push
 on:
   push:
     branches: [ "main" ]
-    tags: [ "v*" ]
 
 permissions:
   contents: read
   packages: write
 
 env:
-  REPO_NAME: "eduardotrigo/academia2025-challenge"
+  DOCKER_REPO_NAME: eduardotrigo/academia2025-challenge
 
 jobs:
   docker:
@@ -34,13 +33,11 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ env.REPO_NAME }}
+          images: ghcr.io/${{ env.DOCKER_REPO_NAME }}
           tags: |
-            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/main' }}
-            type=raw,value=prod,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
-            type=sha
+            type=raw,value=dev
 
-      - name: Build and push (production target)
+      - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
