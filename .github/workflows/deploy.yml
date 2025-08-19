@@ -31,10 +31,10 @@ jobs:
       - name: Deploy to Swarm via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.SSH_HOST_PINGGY }}
+          host: ${{ secrets.SSH_HOST_VM }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT_PINGGY }}
+          port: ${{ secrets.SSH_PORT_VM }}
           script: |
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             docker stack deploy -c /home/deploy/docker-stack.yml app_stack --with-registry-auth
